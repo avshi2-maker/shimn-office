@@ -6,9 +6,10 @@ out
 *.tsbuildinfo
 next-env.d.ts
 
-1.jpeg
-2.jpeg
-3.jpeg
-4.jpeg
-5.jpeg
-shimon_data.docx
+# originals in the folder root (copies live in public/ref and docs)
+/1.jpeg
+/2.jpeg
+/3.jpeg
+/4.jpeg
+/5.jpeg
+/shimon_data.docx
