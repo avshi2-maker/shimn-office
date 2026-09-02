@@ -45,6 +45,7 @@ export interface Config {
     split: boolean; // פיצול ל-2 מהלכים עם פודסט ביניים
     lowerCount: number; // מספר מדרגות במהלך התחתון (העליון = count - lowerCount)
     midLanding: number; // עומק פודסט ביניים (ס"מ)
+    highlightLanding: boolean; // הדגשת הפודסט בתמונה (קו מתאר בולט + פס אבן כהה)
   };
   railing: {
     on: boolean;
@@ -117,6 +118,7 @@ export const PRESET_SKETCH: Config = {
     split: true,
     lowerCount: 7,
     midLanding: 120,
+    highlightLanding: true,
   },
   railing: {
     on: true,
@@ -274,7 +276,10 @@ export function buildPrompt(c: Config): string {
         (c.stairs.sideWall ? ", with an exposed board-formed concrete cheek wall on the open side" : "") +
         `. ${dir}` +
         (c.stairs.split
-          ? `. The staircase is SPLIT INTO TWO FLIGHTS with an intermediate landing between them: lower flight of ${c.stairs.lowerCount} steps, then a flat landing ${(c.stairs.midLanding / 100).toFixed(1)} m deep, then an upper flight of ${c.stairs.count - c.stairs.lowerCount} steps, both flights in the same straight line`
+          ? `. The staircase is SPLIT INTO TWO FLIGHTS with an intermediate landing between them: lower flight of ${c.stairs.lowerCount} steps, then a FLAT HORIZONTAL LANDING ${(c.stairs.midLanding / 100).toFixed(1)} m deep (a clearly visible flat platform that breaks the diagonal line of the stairs — the handrail also becomes horizontal over the landing), then an upper flight of ${c.stairs.count - c.stairs.lowerCount} steps, both flights in the same straight line` +
+            (c.stairs.highlightLanding
+              ? `. MARK THE LANDING CLEARLY: give the landing platform a contrasting darker stone finish and draw a bold thin red outline around its edges so it is unmistakable in the image`
+              : "")
           : "") +
         (c.stairs.landing ? ". A small landing and the entrance door are visible at the top of the stairs" : "") +
         "."
@@ -284,14 +289,14 @@ export function buildPrompt(c: Config): string {
   if (c.railing.on && c.stairs.on) {
     const colorEn = { stone_beige: "warm beige (RAL 1019) matching the limestone walls", dark_brown: "dark brown (RAL 8017)", graphite: "graphite gray (RAL 7024)" }[c.railing.color];
     const meshEn = {
-      decorative_lattice: "a decorative laser-cut lattice infill panel (small openings under 10 cm so a child cannot put a hand or head through)",
-      perforated_sheet: "a decorative perforated metal sheet infill",
-      vertical_bars: "closely spaced vertical bars (10 cm gaps)",
+      decorative_lattice: "FULL-HEIGHT decorative laser-cut metal lattice panels with a repeating ornamental geometric pattern (Moroccan / arabesque style) filling EVERY bay between the posts from the bottom rail to the top handrail, openings smaller than 10 cm so a child cannot put a hand or head through",
+      perforated_sheet: "FULL-HEIGHT decorative perforated metal sheet panels filling every bay between the posts from bottom rail to top handrail",
+      vertical_bars: "closely spaced vertical bars with 10 cm gaps filling every bay from bottom rail to top handrail",
     }[c.railing.mesh];
     parts.push(
       `Guard rail on BOTH sides of the staircase, ${c.railing.height} cm high, made of square steel profile ${c.railing.profile}x${c.railing.profile} mm, powder-coated ${colorEn}: on the house side ` +
         (c.railing.wallPlate ? `a continuous flat steel plate handrail bolted to the house wall and welded to the stair stringer; ` : `a wall-mounted handrail; `) +
-        `on the OUTER open side vertical posts every ${c.railing.postSpacing} cm with a top handrail and ${meshEn}, following the slope of both flights and the landing.`
+        `on the OUTER open side vertical posts every ${c.railing.postSpacing} cm with a top handrail, a bottom rail, and ${meshEn}. The infill panels are the dominant visual feature of the railing and must be clearly visible. NOT plain horizontal bars, NOT empty open bays, NOT glass. The railing follows the slope of both flights and runs horizontal over the landing.`
     );
   }
 

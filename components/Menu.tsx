@@ -165,6 +165,7 @@ export default function Menu({ cfg, onChange, onReset }: Props) {
           <>
             <Num label="מדרגות במהלך התחתון" value={Math.min(cfg.stairs.lowerCount, cfg.stairs.count - 1)} min={2} max={cfg.stairs.count - 2} step={1} unit={`(עליון: ${cfg.stairs.count - cfg.stairs.lowerCount})`} onChange={u("stairs.lowerCount")} />
             <Num label="עומק פודסט ביניים" value={cfg.stairs.midLanding} min={90} max={200} step={10} unit='ס"מ' onChange={u("stairs.midLanding")} />
+            <Chk label="הדגש פודסט בתמונה (קו מתאר אדום + אבן כהה)" value={cfg.stairs.highlightLanding} onChange={u("stairs.highlightLanding")} />
           </>
         )}
       </Group>
