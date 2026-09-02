@@ -38,9 +38,19 @@ export default function Page() {
   async function copy() {
     try {
       await navigator.clipboard.writeText(prompt);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    } catch {
+      // fallback לדפדפנים שחוסמים clipboard API
+      const ta = document.createElement("textarea");
+      ta.value = prompt;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   }
 
   function exportJson() {
@@ -89,9 +99,14 @@ export default function Page() {
         </section>
 
         <section className="card">
-          <h2>פרומפט ל-Nano Banana (Gemini image)</h2>
+          <div className="actions" style={{ justifyContent: "space-between", marginBottom: 8 }}>
+            <h2 style={{ margin: 0 }}>פרומפט ל-Nano Banana (Gemini image)</h2>
+            <button className="btn" onClick={copy}>
+              {copied ? "הועתק ✓" : "העתק הכל"}
+            </button>
+          </div>
           <p className="hint">
-            צרף לפרומפט את התמונות: <b>A</b> = מצב קיים (3.jpeg), <b>B</b> = רפרנס (2.jpeg), <b>C</b> = סקיצה (1.jpeg).
+            צרף לפרומפט את התמונות: <b>C</b> = סקיצה (1.jpeg) — קובעת את הקומפוזיציה, <b>A</b> = מצב קיים (3.jpeg), <b>B</b> = רפרנס חומרים (2.jpeg).
           </p>
           <div className="prompt-box">{prompt}</div>
         </section>

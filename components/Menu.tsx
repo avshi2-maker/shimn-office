@@ -1,6 +1,6 @@
 "use client";
 
-import { Config, LABELS } from "@/lib/config";
+import { Config, LABELS, PRESET_SKETCH, PRESET_PHOTO } from "@/lib/config";
 
 type Props = {
   cfg: Config;
@@ -108,8 +108,14 @@ export default function Menu({ cfg, onChange, onReset }: Props) {
   return (
     <aside className="menu">
       <div className="actions" style={{ marginBottom: 10 }}>
+        <button className="btn" onClick={() => onChange(structuredClone(PRESET_SKETCH))} title="מאפס את כל הפרמטרים למה שמצויר בסקיצה 1.jpeg">
+          100% לפי הסקיצה
+        </button>
+        <button className="btn ghost" onClick={() => onChange(structuredClone(PRESET_PHOTO))} title="לפי תמונה 2 + סימון 1·2·3">
+          לפי תמונה 2
+        </button>
         <button className="btn ghost" onClick={onReset}>
-          איפוס לברירת מחדל
+          איפוס
         </button>
       </div>
 
@@ -129,12 +135,17 @@ export default function Menu({ cfg, onChange, onReset }: Props) {
         <Chk label="הצג בית" value={cfg.house.show} onChange={u("house.show")} />
         <Num label="גובה פס אבן בחזית" value={cfg.house.claddingBandH} min={0.6} max={2.5} step={0.1} unit="מ'" onChange={u("house.claddingBandH")} />
         <Chk label="אדנית אבן מתחת לחלון" value={cfg.house.windowPlanter} onChange={u("house.windowPlanter")} />
+        <Chk label="אדנית ארוכה + מעקה סורג לאורך הבית (סקיצה)" value={cfg.house.railPlanter} onChange={u("house.railPlanter")} />
+        <Chk label="חלון מרתף מאחורי קיר הבסיס (סקיצה)" value={cfg.house.basementWindow} onChange={u("house.basementWindow")} />
       </Group>
 
-      <Group title="קיר בסיס לאורך הבית" on={cfg.baseWall.on} defaultOpen>
+      <Group title="חומת בסיס לאורך הבית" on={cfg.baseWall.on} defaultOpen>
         <Chk label="פעיל" value={cfg.baseWall.on} onChange={u("baseWall.on")} />
         <Num label="גובה" value={cfg.baseWall.h} min={0.4} max={2.5} step={0.1} unit="מ'" onChange={u("baseWall.h")} />
-        <Num label="אורך" value={cfg.baseWall.len} min={2} max={12} step={0.5} unit="מ'" onChange={u("baseWall.len")} />
+        <Chk label='"עד לסוף הקיר" — לכל אורך חזית הבית' value={cfg.baseWall.fullLength} onChange={u("baseWall.fullLength")} />
+        {!cfg.baseWall.fullLength && (
+          <Num label="אורך" value={cfg.baseWall.len} min={2} max={12} step={0.5} unit="מ'" onChange={u("baseWall.len")} />
+        )}
         <Chk label="קופינג (כיסוי עליון)" value={cfg.baseWall.cap} onChange={u("baseWall.cap")} />
       </Group>
 
@@ -151,7 +162,7 @@ export default function Menu({ cfg, onChange, onReset }: Props) {
         <Chk label="פודסט + דלת כניסה בראש המדרגות" value={cfg.stairs.landing} onChange={u("stairs.landing")} />
       </Group>
 
-      <Group title="קיר אבן גבוה (אלמנט 3 ✓)" on={cfg.tallWall.on} defaultOpen>
+      <Group title="קיר אבן גבוה ישר (תמונה 2 — לא בסקיצה)" on={cfg.tallWall.on}>
         <Chk label="פעיל" value={cfg.tallWall.on} onChange={u("tallWall.on")} />
         <Num label="גובה" value={cfg.tallWall.h} min={1} max={4} step={0.1} unit="מ'" onChange={u("tallWall.h")} />
         <Num label="אורך" value={cfg.tallWall.len} min={1} max={8} step={0.5} unit="מ'" onChange={u("tallWall.len")} />
@@ -159,11 +170,17 @@ export default function Menu({ cfg, onChange, onReset }: Props) {
         <Chk label="כיסוי עליון" value={cfg.tallWall.cap} onChange={u("tallWall.cap")} />
       </Group>
 
-      <Group title="קיר תומך מעוגל (מהסקיצה)" on={cfg.curvedWall.on}>
+      <Group title="קיר תומך מעוגל (סקיצה)" on={cfg.curvedWall.on} defaultOpen>
         <Chk label="פעיל" value={cfg.curvedWall.on} onChange={u("curvedWall.on")} />
         <Num label="גובה" value={cfg.curvedWall.h} min={0.4} max={2} step={0.1} unit="מ'" onChange={u("curvedWall.h")} />
         <Num label="רדיוס" value={cfg.curvedWall.radius} min={1} max={8} step={0.5} unit="מ'" onChange={u("curvedWall.radius")} />
         <Num label="קשת" value={cfg.curvedWall.arc} min={30} max={180} step={5} unit="°" onChange={u("curvedWall.arc")} />
+        <Chk label="פס חצץ לאורך ראש הקיר" value={cfg.curvedWall.gravelStrip} onChange={u("curvedWall.gravelStrip")} />
+      </Group>
+
+      <Group title='אבני מדרך למדרכה — "3 מדרגות" (סקיצה)' on={cfg.steppingStones.on} defaultOpen>
+        <Chk label="פעיל" value={cfg.steppingStones.on} onChange={u("steppingStones.on")} />
+        <Num label="מספר אבנים" value={cfg.steppingStones.count} min={1} max={6} step={1} unit="" onChange={u("steppingStones.count")} />
       </Group>
 
       <Group title="רחבה מרוצפת" on={cfg.patio.on}>
@@ -173,7 +190,7 @@ export default function Menu({ cfg, onChange, onReset }: Props) {
         <Sel label="ריצוף" value={cfg.patio.paving} options={LABELS.paving} onChange={u("patio.paving")} />
       </Group>
 
-      <Group title="טרסת גינה שמאל (אלמנט 1)" on={cfg.gardenTerrace.on}>
+      <Group title="טרסת גינה שמאל (תמונה 2 — לא בסקיצה)" on={cfg.gardenTerrace.on}>
         <Chk label="פעיל (צמוד לקיר הבית)" value={cfg.gardenTerrace.on} onChange={u("gardenTerrace.on")} />
         <Num label="גובה" value={cfg.gardenTerrace.h} min={0.4} max={1.5} step={0.1} unit="מ'" onChange={u("gardenTerrace.h")} />
         <Num label="אורך" value={cfg.gardenTerrace.len} min={2} max={8} step={0.5} unit="מ'" onChange={u("gardenTerrace.len")} />

@@ -21,12 +21,15 @@ export interface Config {
     show: boolean;
     claddingBandH: number; // גובה פס אבן בחזית הבית (מ')
     windowPlanter: boolean; // אדנית מתחת לחלון
+    railPlanter: boolean; // אדנית ארוכה + מעקה סורג לאורך הבית מעל קיר הבסיס (בסקיצה)
+    basementWindow: boolean; // חלון מרתף מאחורי קיר הבסיס (בסקיצה)
   };
   baseWall: {
     on: boolean;
     h: number; // גובה (מ')
     len: number; // אורך (מ')
     cap: boolean; // קופינג עליון
+    fullLength: boolean; // "עד לסוף הקיר" — לכל אורך חזית הבית
   };
   stairs: {
     on: boolean;
@@ -52,6 +55,11 @@ export interface Config {
     h: number;
     radius: number; // מ'
     arc: number; // מעלות
+    gravelStrip: boolean; // פס חצץ לאורך ראש הקיר (בסקיצה)
+  };
+  steppingStones: {
+    on: boolean; // "3 מדרגות" — אבני מדרך שטוחות מאחורי הקיר המעוגל עד המדרכה
+    count: number;
   };
   patio: {
     on: boolean;
@@ -67,7 +75,12 @@ export interface Config {
   };
 }
 
-export const DEFAULT: Config = {
+// ===== פריסט 1: 100% לפי הסקיצה של שמעון (1.jpeg) — ברירת המחדל =====
+// מה שמצויר: חומת בסיס לכל אורך הבית ("עד לסוף הקיר") מול חלון מרתף, אדנית+סורג מעליה,
+// מדרגות בצד ימין צמודות לבית עם קיר בטון, קיר תומך מעוגל רחב עם פס חצץ,
+// "3 מדרגות" אבני מדרך מאחורי הקיר המעוגל. אין טרסת גינה בשמאל, אין קיר גבוה ישר.
+// נתוני שמעון (docx): אורך מדרגות 4 מ' (13×30 ס"מ), רוחב 5.6–6 מ', עובי חומה 40 ס"מ.
+export const PRESET_SKETCH: Config = {
   global: {
     stone: "jerusalem_gold",
     mortar: "light",
@@ -76,10 +89,8 @@ export const DEFAULT: Config = {
     realism: "photo",
     notes: "",
   },
-  house: { show: true, claddingBandH: 1.2, windowPlanter: true },
-  baseWall: { on: true, h: 1.0, len: 6.0, cap: true },
-  // נתוני שמעון: אורך מדרגות 4 מ' (13×30 ס"מ), רוחב 5.6–6 מ', עובי חומה 40 ס"מ,
-  // פרטים 1-2-3 נשארים וצמודים לקיר הבית.
+  house: { show: true, claddingBandH: 1.2, windowPlanter: true, railPlanter: true, basementWindow: true },
+  baseWall: { on: true, h: 1.0, len: 6.0, cap: true, fullLength: true },
   stairs: {
     on: true,
     count: 13,
@@ -92,11 +103,25 @@ export const DEFAULT: Config = {
     direction: "perpendicular",
     landing: true,
   },
-  tallWall: { on: true, h: 2.6, len: 3.0, cap: true, thickness: 40 },
-  curvedWall: { on: true, h: 1.0, radius: 3.0, arc: 90 },
+  tallWall: { on: false, h: 2.6, len: 3.0, cap: true, thickness: 40 },
+  curvedWall: { on: true, h: 1.0, radius: 3.0, arc: 90, gravelStrip: true },
+  steppingStones: { on: true, count: 3 },
   patio: { on: true, width: 5.8, depth: 4.0, paving: "concrete_slabs" },
+  gardenTerrace: { on: false, h: 0.8, len: 4.0, planting: true },
+};
+
+// ===== פריסט 2: לפי תמונת הרפרנס (2.jpeg) + סימון 1·2·3 =====
+export const PRESET_PHOTO: Config = {
+  ...structuredClone(PRESET_SKETCH),
+  house: { show: true, claddingBandH: 1.2, windowPlanter: true, railPlanter: false, basementWindow: false },
+  baseWall: { on: true, h: 1.0, len: 6.0, cap: true, fullLength: false },
+  tallWall: { on: true, h: 2.6, len: 3.0, cap: true, thickness: 40 },
+  curvedWall: { on: false, h: 1.0, radius: 3.0, arc: 90, gravelStrip: false },
+  steppingStones: { on: false, count: 3 },
   gardenTerrace: { on: true, h: 0.8, len: 4.0, planting: true },
 };
+
+export const DEFAULT: Config = PRESET_SKETCH;
 
 export const LABELS = {
   stone: {
@@ -181,22 +206,25 @@ export function buildPrompt(c: Config): string {
     `${EN.realism[c.global.realism]}. ${EN.camera[c.global.camera]}, ${EN.time[c.global.time]}.`
   );
   lines.push(
-    `Use the attached photos as reference: photo A is the CURRENT SITE (excavated slope with rubble, exposed foundation of a white two-story house with a limestone cladding band). Photos B/C are the target STYLE reference. Keep the house, roof, windows, trees and street exactly as in photo A; rebuild only the front landscape as described below.`
+    `Attached references: sketch C is the architect's HAND SKETCH — the LAYOUT AND COMPOSITION MUST FOLLOW SKETCH C EXACTLY (which element sits where, how the walls run, where the stairs are). Photo A is the CURRENT SITE (excavated slope with rubble, exposed foundation of a white two-story house with a limestone cladding band) — keep the house, roof, windows, trees and street exactly as in photo A. Photo B is only the MATERIAL / STONE STYLE reference. Rebuild only the front landscape as described below; do not invent elements that are not listed.`
   );
 
   const parts: string[] = [];
 
   if (c.house.show) {
     parts.push(
-      `House facade: white plaster, dark brown roof fascia, limestone cladding band about ${c.house.claddingBandH.toFixed(1)} m high at the base of the ground floor` +
-        (c.house.windowPlanter ? ", stone planter box under the main window with ornamental grasses" : "") +
+      `House facade: white plaster, dark brown roof fascia, coursed ashlar limestone cladding band about ${c.house.claddingBandH.toFixed(1)} m high at the base of the ground floor` +
+        (c.house.windowPlanter ? ", stone planter box under the main upper window with ornamental grasses" : "") +
+        (c.house.railPlanter ? ", and a long low stone planter with a thin dark metal grille railing running along the house at the top of the base wall (as in sketch C)" : "") +
+        (c.house.basementWindow ? ". A wide basement window is visible at ground level behind the base wall on the left" : "") +
         "."
     );
   }
 
   if (c.baseWall.on) {
     parts.push(
-      `Base retaining wall along the house: ${s}, ${EN.mortar[c.global.mortar]}, about ${c.baseWall.h.toFixed(1)} m high and ${c.baseWall.len.toFixed(1)} m long` +
+      `Base retaining wall ("chomah") in front of the house: ${s}, ${EN.mortar[c.global.mortar]}, about ${c.baseWall.h.toFixed(1)} m high, ` +
+        (c.baseWall.fullLength ? `running the FULL length of the house front wall from the left corner up to the stairs (sketch C: "up to the end of the wall")` : `${c.baseWall.len.toFixed(1)} m long`) +
         (c.baseWall.cap ? ", flat stone coping on top" : "") +
         "."
     );
@@ -226,8 +254,23 @@ export function buildPrompt(c: Config): string {
 
   if (c.curvedWall.on) {
     parts.push(
-      `Low curved retaining wall following the street corner, a SEPARATE element much lower than the tall wall: ${s}, about ${c.curvedWall.h.toFixed(1)} m high, radius about ${c.curvedWall.radius.toFixed(1)} m sweeping ${c.curvedWall.arc} degrees, with a gravel strip behind it.`
+      `Wide curved retaining wall starting at the right side of the stairs and sweeping around the patio corner toward the street (exactly as drawn in sketch C): ${s}, about ${c.curvedWall.h.toFixed(1)} m high, radius about ${c.curvedWall.radius.toFixed(1)} m over ${c.curvedWall.arc} degrees` +
+        (c.tallWall.on ? ", a SEPARATE element much lower than the tall wall" : "") +
+        (c.curvedWall.gravelStrip ? ", with a strip of loose gravel / pebbles running along the top of the wall" : "") +
+        "."
     );
+  } else {
+    parts.push(`No curved wall.`);
+  }
+
+  if (c.steppingStones.on) {
+    parts.push(
+      `Behind the curved wall at the top right, ${c.steppingStones.count} large flat irregular limestone stepping-stone steps lead up from the wall to the upper sidewalk level, next to a thin street pole (as in sketch C).`
+    );
+  }
+
+  if (!c.tallWall.on) {
+    parts.push(`Do NOT add a tall straight boundary wall; the only wall on the right is the curved wall.`);
   }
 
   if (c.patio.on) {
@@ -243,7 +286,7 @@ export function buildPrompt(c: Config): string {
         "."
     );
   } else {
-    parts.push(`Do NOT add a stepped garden terrace or planter walls on the left side; keep that area as a simple level surface.`);
+    parts.push(`Do NOT add a stepped garden terrace or planter walls on the left side; on the left there is only the base wall in front of the house, as in sketch C.`);
   }
 
   lines.push(parts.join(" "));
@@ -260,7 +303,7 @@ export function buildPrompt(c: Config): string {
 export function buildSummary(c: Config): { k: string; v: string }[] {
   const out: { k: string; v: string }[] = [];
   out.push({ k: "אבן", v: LABELS.stone[c.global.stone] });
-  if (c.baseWall.on) out.push({ k: "קיר בסיס", v: `${c.baseWall.h} מ' × ${c.baseWall.len} מ'` });
+  if (c.baseWall.on) out.push({ k: "קיר בסיס", v: `${c.baseWall.h} מ' × ${c.baseWall.fullLength ? "כל אורך הבית" : c.baseWall.len + " מ'"}` });
   if (c.stairs.on)
     out.push({
       k: "מדרגות",
@@ -270,7 +313,8 @@ export function buildSummary(c: Config): { k: string; v: string }[] {
       ).toFixed(2)} מ'`,
     });
   if (c.tallWall.on) out.push({ k: "קיר גבוה", v: `${c.tallWall.h} מ' × ${c.tallWall.len} מ'` });
-  if (c.curvedWall.on) out.push({ k: "קיר מעוגל", v: `R${c.curvedWall.radius} מ' · ${c.curvedWall.arc}°` });
+  if (c.curvedWall.on) out.push({ k: "קיר מעוגל", v: `R${c.curvedWall.radius} מ' · ${c.curvedWall.arc}°${c.curvedWall.gravelStrip ? " · פס חצץ" : ""}` });
+  if (c.steppingStones.on) out.push({ k: "אבני מדרך", v: `${c.steppingStones.count} מדרגות למדרכה` });
   if (c.patio.on) out.push({ k: "רחבה", v: `${c.patio.width} × ${c.patio.depth} מ' · ${LABELS.paving[c.patio.paving]}` });
   out.push({ k: "טרסת גינה (אלמנט 1)", v: c.gardenTerrace.on ? `${c.gardenTerrace.h} מ' × ${c.gardenTerrace.len} מ' · צמוד לבית` : "לא" });
   return out;

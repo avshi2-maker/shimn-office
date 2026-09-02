@@ -21,8 +21,9 @@ export default function Sketch({ cfg }: { cfg: Config }) {
   const seq: Box[] = [];
   if (cfg.gardenTerrace.on)
     seq.push({ x: 0, w: cfg.gardenTerrace.len, h: cfg.gardenTerrace.h, fill: STONE, label: "טרסת גינה 1", dim: `${cfg.gardenTerrace.len}×${cfg.gardenTerrace.h} מ'` });
+  const baseLen = cfg.baseWall.fullLength ? Math.max(cfg.baseWall.len, cfg.patio.width) : cfg.baseWall.len;
   if (cfg.baseWall.on)
-    seq.push({ x: 0, w: cfg.baseWall.len, h: cfg.baseWall.h, fill: STONE, label: "קיר בסיס", dim: `${cfg.baseWall.len}×${cfg.baseWall.h} מ'` });
+    seq.push({ x: 0, w: baseLen, h: cfg.baseWall.h, fill: STONE, label: "חומת בסיס", dim: `${cfg.baseWall.fullLength ? "עד לסוף הקיר" : baseLen + " מ'"} × ${cfg.baseWall.h} מ'` });
   const stairsBox: Box | null = cfg.stairs.on
     ? { x: 0, w: run, h: rise, fill: CONCRETE, label: "מדרגות 2", dim: `${cfg.stairs.count}×${cfg.stairs.riser}/${cfg.stairs.tread} · אורך ${run.toFixed(1)} מ'` }
     : null;
@@ -48,8 +49,8 @@ export default function Sketch({ cfg }: { cfg: Config }) {
   const planH = cfg.patio.on ? cfg.patio.depth * S + 60 : 0;
   const H = G + 70 + planH;
 
-  const houseX = (cfg.baseWall.on ? seq.find((b) => b.label === "קיר בסיס")!.x : 0.5) * S + 20;
-  const houseW = ((cfg.baseWall.on ? cfg.baseWall.len : 6) + run) * S;
+  const houseX = (cfg.baseWall.on ? seq.find((b) => b.label === "חומת בסיס")!.x : 0.5) * S + 20;
+  const houseW = ((cfg.baseWall.on ? baseLen : 6) + run) * S;
   const houseBase = G - Math.max(cfg.baseWall.h, rise) * S;
 
   return (
@@ -148,7 +149,7 @@ export default function Sketch({ cfg }: { cfg: Config }) {
 
         {/* ---- תוכנית ---- */}
         {cfg.patio.on && (
-          <g transform={`translate(20 ${G + 60})`}>
+          <g transform={`translate(100 ${G + 60})`}>
             <text x={(W - 40) / 2} y={-6} textAnchor="middle" fontWeight="700" fontSize="13" fill={INK}>
               תוכנית — רחבה {cfg.patio.width} × {cfg.patio.depth} מ'
             </text>
@@ -196,7 +197,7 @@ export default function Sketch({ cfg }: { cfg: Config }) {
                   // קשת שמעגלת את פינת הרחבה הרחוקה מהמדרגות (כמו בסקיצה)
                   const r = Math.min(cfg.curvedWall.radius, cfg.patio.depth, cfg.patio.width) * S;
                   const a = (Math.min(cfg.curvedWall.arc, 90) * Math.PI) / 180;
-                  const left = cfg.stairs.side === "right";
+                  const left = cfg.stairs.side === "left";
                   const cx = left ? r : cfg.patio.width * S - r;
                   const cy = cfg.patio.depth * S - r;
                   const dir = left ? -1 : 1;
@@ -212,9 +213,39 @@ export default function Sketch({ cfg }: { cfg: Config }) {
                 strokeLinecap="round"
               />
             )}
+            {cfg.curvedWall.on && cfg.curvedWall.gravelStrip && (
+              <path
+                d={(() => {
+                  const r = Math.min(cfg.curvedWall.radius, cfg.patio.depth, cfg.patio.width) * S + 8;
+                  const a = (Math.min(cfg.curvedWall.arc, 90) * Math.PI) / 180;
+                  const left = cfg.stairs.side === "left";
+                  const cx = left ? r - 8 : cfg.patio.width * S - r + 8;
+                  const cy = cfg.patio.depth * S - r + 8;
+                  const dir = left ? -1 : 1;
+                  return `M${cx + dir * r} ${cy} A${r} ${r} 0 0 ${left ? 0 : 1} ${cx + dir * r * Math.cos(a)} ${cy + r * Math.sin(a)}`;
+                })()}
+                fill="none"
+                stroke="#9a9a90"
+                strokeWidth="4"
+                strokeDasharray="1 4"
+                strokeLinecap="round"
+              />
+            )}
             {cfg.curvedWall.on && (
-              <text x={cfg.stairs.side === "right" ? 6 : cfg.patio.width * S - 6} y={cfg.patio.depth * S - 8} textAnchor={cfg.stairs.side === "right" ? "start" : "end"} fontSize="10" fill={STONE_DARK}>
-                קיר מעוגל R{cfg.curvedWall.radius} · {cfg.curvedWall.arc}°
+              <text x={cfg.stairs.side === "left" ? 6 : cfg.patio.width * S - 6} y={cfg.patio.depth * S - 8} textAnchor={cfg.stairs.side === "left" ? "start" : "end"} fontSize="10" fill={STONE_DARK}>
+                קיר מעוגל R{cfg.curvedWall.radius} · {cfg.curvedWall.arc}°{cfg.curvedWall.gravelStrip ? " · חצץ" : ""}
+              </text>
+            )}
+            {cfg.steppingStones.on &&
+              Array.from({ length: cfg.steppingStones.count }).map((_, k) => {
+                const left = cfg.stairs.side === "left";
+                const bx = left ? -22 - k * 20 : cfg.patio.width * S + 22 + k * 20;
+                const by = cfg.patio.depth * S - 30 - k * 16;
+                return <ellipse key={k} cx={bx} cy={by} rx={11} ry={7} fill={STONE} stroke={INK} strokeWidth="0.8" />;
+              })}
+            {cfg.steppingStones.on && (
+              <text x={cfg.stairs.side === "left" ? -14 : cfg.patio.width * S + 14} y={cfg.patio.depth * S - 30 - cfg.steppingStones.count * 16} textAnchor="middle" fontSize="9" fill={INK}>
+                {cfg.steppingStones.count} אבני מדרך
               </text>
             )}
             <text x={(cfg.patio.width * S) / 2} y={cfg.patio.depth * S + 16} textAnchor="middle" fontSize="10" fill={INK}>
