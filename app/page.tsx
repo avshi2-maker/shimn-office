@@ -15,7 +15,15 @@ export default function Page() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) setCfg({ ...DEFAULT, ...JSON.parse(raw) });
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<Config>;
+        const merged = structuredClone(DEFAULT) as unknown as Record<string, object>;
+        for (const k of Object.keys(merged)) {
+          const sv = (saved as Record<string, object>)[k];
+          if (sv && typeof sv === "object") merged[k] = { ...merged[k], ...sv };
+        }
+        setCfg(merged as unknown as Config);
+      }
     } catch {}
   }, []);
   useEffect(() => {

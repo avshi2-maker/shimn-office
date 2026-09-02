@@ -37,6 +37,8 @@ export interface Config {
     material: StairMaterial;
     side: Side; // מיקום ביחס לרחבה
     sideWall: boolean; // קיר בטון חשוף לצד המדרגות (ref #2)
+    direction: "parallel" | "perpendicular"; // מקביל לחזית (כמו תמונה 2) / ניצב לחזית
+    landing: boolean; // פודסט + דלת כניסה בראש המדרגות
   };
   tallWall: {
     on: boolean;
@@ -87,6 +89,8 @@ export const DEFAULT: Config = {
     material: "concrete",
     side: "right",
     sideWall: true,
+    direction: "parallel",
+    landing: true,
   },
   tallWall: { on: true, h: 2.6, len: 3.0, cap: true, thickness: 40 },
   curvedWall: { on: true, h: 1.0, radius: 3.0, arc: 90 },
@@ -127,6 +131,7 @@ export const LABELS = {
   mortar: { light: "בהיר", dark: "כהה", raked: "שקוע" },
   realism: { photo: "צילום פוטו-ריאליסטי", render: "רנדר אדריכלי", sketch: "סקיצה בעיפרון" },
   side: { right: "ימין", left: "שמאל" },
+  direction: { parallel: "מקביל לחזית, צמוד לקיר הבית (כמו תמונה 2)", perpendicular: "ניצב לחזית (עולים לכיוון הבית)" },
 };
 
 // ---------- English text for the image model ----------
@@ -198,16 +203,22 @@ export function buildPrompt(c: Config): string {
   }
 
   if (c.stairs.on) {
+    const dir =
+      c.stairs.direction === "parallel"
+        ? `The flight runs PARALLEL to the house facade, hugging the house wall, rising from ${c.stairs.side === "right" ? "left to right" : "right to left"} exactly as in photo B — NOT perpendicular to the house`
+        : `The flight runs perpendicular to the facade, climbing straight toward the house`;
     parts.push(
-      `Straight outdoor staircase on the ${c.stairs.side} side of the patio, attached to the house wall, going up to the house entrance level: ${c.stairs.count} steps over a ${((c.stairs.count * c.stairs.tread) / 100).toFixed(1)} m run, ${c.stairs.width.toFixed(1)} m wide, ${c.stairs.riser} cm risers, ${c.stairs.tread} cm treads, made of ${EN.stairMaterial[c.stairs.material]}` +
+      `Straight outdoor staircase on the ${c.stairs.side} side of the patio going up to the house entrance level: ${c.stairs.count} steps over a ${((c.stairs.count * c.stairs.tread) / 100).toFixed(1)} m run, ${c.stairs.width.toFixed(1)} m wide, ${c.stairs.riser} cm risers, ${c.stairs.tread} cm treads, made of ${EN.stairMaterial[c.stairs.material]}` +
         (c.stairs.sideWall ? ", with an exposed board-formed concrete cheek wall on the open side" : "") +
+        `. ${dir}` +
+        (c.stairs.landing ? ". A small landing and the entrance door are visible at the top of the stairs" : "") +
         "."
     );
   }
 
   if (c.tallWall.on) {
     parts.push(
-      `Tall boundary wall next to the stairs: ${s}, about ${c.tallWall.h.toFixed(1)} m high, ${c.tallWall.len.toFixed(1)} m long, ${c.tallWall.thickness} cm thick` +
+      `Tall boundary wall next to the stairs, a SEPARATE straight wall (not merged with any other wall): ${s}, about ${c.tallWall.h.toFixed(1)} m high, ${c.tallWall.len.toFixed(1)} m long, ${c.tallWall.thickness} cm thick` +
         (c.tallWall.cap ? ", with a flat stone cap" : "") +
         "."
     );
@@ -215,7 +226,7 @@ export function buildPrompt(c: Config): string {
 
   if (c.curvedWall.on) {
     parts.push(
-      `Low curved retaining wall following the street corner: ${s}, about ${c.curvedWall.h.toFixed(1)} m high, radius about ${c.curvedWall.radius.toFixed(1)} m sweeping ${c.curvedWall.arc} degrees, with a gravel strip behind it.`
+      `Low curved retaining wall following the street corner, a SEPARATE element much lower than the tall wall: ${s}, about ${c.curvedWall.h.toFixed(1)} m high, radius about ${c.curvedWall.radius.toFixed(1)} m sweeping ${c.curvedWall.arc} degrees, with a gravel strip behind it.`
     );
   }
 

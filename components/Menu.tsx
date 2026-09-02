@@ -146,7 +146,9 @@ export default function Menu({ cfg, onChange, onReset }: Props) {
         <Num label="שלח (עומק מדרגה)" value={cfg.stairs.tread} min={26} max={40} step={1} unit='ס"מ' onChange={u("stairs.tread")} />
         <Sel label="חומר" value={cfg.stairs.material} options={LABELS.stairMaterial} onChange={u("stairs.material")} />
         <Sel label="צד ברחבה" value={cfg.stairs.side} options={LABELS.side} onChange={u("stairs.side")} />
+        <Sel label="כיוון העלייה" value={cfg.stairs.direction} options={LABELS.direction} onChange={u("stairs.direction")} />
         <Chk label="קיר בטון חשוף לצד המדרגות" value={cfg.stairs.sideWall} onChange={u("stairs.sideWall")} />
+        <Chk label="פודסט + דלת כניסה בראש המדרגות" value={cfg.stairs.landing} onChange={u("stairs.landing")} />
       </Group>
 
       <Group title="קיר אבן גבוה (אלמנט 3 ✓)" on={cfg.tallWall.on} defaultOpen>
