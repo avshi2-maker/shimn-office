@@ -208,7 +208,7 @@ export function buildPrompt(c: Config): string {
         ? `The flight runs PARALLEL to the house facade, hugging the house wall, rising from ${c.stairs.side === "right" ? "left to right" : "right to left"} exactly as in photo B — NOT perpendicular to the house`
         : `The flight runs perpendicular to the facade, climbing straight toward the house, seen head-on exactly as in photo B`;
     parts.push(
-      `Straight outdoor staircase on the ${c.stairs.side} side of the patio going up to the house entrance level: ${c.stairs.count} steps over a ${((c.stairs.count * c.stairs.tread) / 100).toFixed(1)} m run, ${c.stairs.width.toFixed(1)} m wide, ${c.stairs.riser} cm risers, ${c.stairs.tread} cm treads, made of ${EN.stairMaterial[c.stairs.material]}` +
+      `Straight outdoor staircase positioned at the ${c.stairs.side} end of the patio and built DIRECTLY AGAINST the house front wall (attached to the house, as in photo B and sketch C), going up to the house entrance level: ${c.stairs.count} steps over a ${((c.stairs.count * c.stairs.tread) / 100).toFixed(1)} m run, ${c.stairs.width.toFixed(1)} m wide, ${c.stairs.riser} cm risers, ${c.stairs.tread} cm treads, made of ${EN.stairMaterial[c.stairs.material]}` +
         (c.stairs.sideWall ? ", with an exposed board-formed concrete cheek wall on the open side" : "") +
         `. ${dir}` +
         (c.stairs.landing ? ". A small landing and the entrance door are visible at the top of the stairs" : "") +
