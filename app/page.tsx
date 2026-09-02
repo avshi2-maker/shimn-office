@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Config, DEFAULT, buildPrompt, buildSummary } from "@/lib/config";
 import Menu from "@/components/Menu";
 import Sketch from "@/components/Sketch";
+import StairsDetail from "@/components/StairsDetail";
 
 const KEY = "shimn-office-cfg-v1";
 
@@ -85,6 +86,18 @@ export default function Page() {
           <h2>סקיצת תיבות</h2>
           <Sketch cfg={cfg} />
         </section>
+
+        {cfg.stairs.on && (
+          <section className="card print-area">
+            <div className="actions" style={{ justifyContent: "space-between", marginBottom: 8 }}>
+              <h2 style={{ margin: 0 }}>שרטוט ביצוע למדרגות + מעקה (לקבלן)</h2>
+              <button className="btn ghost no-print" onClick={() => window.print()}>
+                הדפס / שמור PDF
+              </button>
+            </div>
+            <StairsDetail cfg={cfg} />
+          </section>
+        )}
 
         <section className="card">
           <h2>סיכום מידות</h2>

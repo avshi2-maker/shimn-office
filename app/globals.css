@@ -154,3 +154,18 @@ details.group .body { padding: 6px 10px 10px; display: grid; gap: 8px; }
 .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px; }
 .summary-grid div { background: #fbfaf8; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 12px; }
 .summary-grid b { display: block; font-size: 13px; }
+
+/* שרטוט ביצוע */
+.detail { display: grid; gap: 12px; }
+.spec table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.spec th { background: #f1ede6; text-align: right; padding: 6px 8px; border: 1px solid var(--line); }
+.spec td { padding: 5px 8px; border: 1px solid var(--line); vertical-align: top; }
+.spec td:first-child { width: 32%; color: var(--muted); }
+
+@media print {
+  body { background: #fff; }
+  .app { display: block; }
+  header.top, aside.menu, .no-print, .card:not(.print-area) { display: none !important; }
+  .card.print-area { border: none; padding: 0; }
+  .sketch-wrap { border: none; }
+}

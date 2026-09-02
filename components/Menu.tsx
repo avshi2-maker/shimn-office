@@ -160,6 +160,23 @@ export default function Menu({ cfg, onChange, onReset }: Props) {
         <Sel label="כיוון העלייה" value={cfg.stairs.direction} options={LABELS.direction} onChange={u("stairs.direction")} />
         <Chk label="קיר בטון חשוף לצד המדרגות" value={cfg.stairs.sideWall} onChange={u("stairs.sideWall")} />
         <Chk label="פודסט + דלת כניסה בראש המדרגות" value={cfg.stairs.landing} onChange={u("stairs.landing")} />
+        <Chk label="פיצול ל-2 מהלכים עם פודסט ביניים" value={cfg.stairs.split} onChange={u("stairs.split")} />
+        {cfg.stairs.split && (
+          <>
+            <Num label="מדרגות במהלך התחתון" value={Math.min(cfg.stairs.lowerCount, cfg.stairs.count - 1)} min={2} max={cfg.stairs.count - 2} step={1} unit={`(עליון: ${cfg.stairs.count - cfg.stairs.lowerCount})`} onChange={u("stairs.lowerCount")} />
+            <Num label="עומק פודסט ביניים" value={cfg.stairs.midLanding} min={90} max={200} step={10} unit='ס"מ' onChange={u("stairs.midLanding")} />
+          </>
+        )}
+      </Group>
+
+      <Group title="מעקה בטיחות למדרגות" on={cfg.railing.on} defaultOpen>
+        <Chk label="פעיל (שני הצדדים)" value={cfg.railing.on} onChange={u("railing.on")} />
+        <Num label="גובה מעקה" value={cfg.railing.height} min={90} max={120} step={5} unit='ס"מ' onChange={u("railing.height")} />
+        <Num label="מרווח עמודים (צד חיצוני)" value={cfg.railing.postSpacing} min={80} max={150} step={10} unit='ס"מ' onChange={u("railing.postSpacing")} />
+        <Num label="פרופיל מתכת מרובע" value={cfg.railing.profile} min={30} max={60} step={5} unit='מ"מ' onChange={u("railing.profile")} />
+        <Sel label="מילוי מגן (צד חיצוני)" value={cfg.railing.mesh} options={LABELS.mesh} onChange={u("railing.mesh")} />
+        <Sel label="צבע (תואם לאבן)" value={cfg.railing.color} options={LABELS.railColor} onChange={u("railing.color")} />
+        <Chk label="פלטת מתכת צד הבית — מעוגנת לקיר ומחוברת למדרגות" value={cfg.railing.wallPlate} onChange={u("railing.wallPlate")} />
       </Group>
 
       <Group title="קיר אבן גבוה ישר (תמונה 2 — לא בסקיצה)" on={cfg.tallWall.on}>

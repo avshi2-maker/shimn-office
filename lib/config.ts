@@ -42,6 +42,18 @@ export interface Config {
     sideWall: boolean; // קיר בטון חשוף לצד המדרגות (ref #2)
     direction: "parallel" | "perpendicular"; // מקביל לחזית (כמו תמונה 2) / ניצב לחזית
     landing: boolean; // פודסט + דלת כניסה בראש המדרגות
+    split: boolean; // פיצול ל-2 מהלכים עם פודסט ביניים
+    lowerCount: number; // מספר מדרגות במהלך התחתון (העליון = count - lowerCount)
+    midLanding: number; // עומק פודסט ביניים (ס"מ)
+  };
+  railing: {
+    on: boolean;
+    height: number; // ס"מ (תקן ישראלי: מינימום 105 במעקה חיצוני)
+    postSpacing: number; // ס"מ
+    profile: number; // מ"מ — פרופיל מתכת מרובע
+    mesh: "decorative_lattice" | "perforated_sheet" | "vertical_bars";
+    color: "stone_beige" | "dark_brown" | "graphite";
+    wallPlate: boolean; // פלטת מתכת לצד הבית מחוברת לקיר ולמדרגות
   };
   tallWall: {
     on: boolean;
@@ -102,6 +114,18 @@ export const PRESET_SKETCH: Config = {
     sideWall: true,
     direction: "perpendicular",
     landing: true,
+    split: true,
+    lowerCount: 7,
+    midLanding: 120,
+  },
+  railing: {
+    on: true,
+    height: 105,
+    postSpacing: 120,
+    profile: 40,
+    mesh: "decorative_lattice",
+    color: "stone_beige",
+    wallPlate: true,
   },
   tallWall: { on: false, h: 2.6, len: 3.0, cap: true, thickness: 40 },
   curvedWall: { on: true, h: 1.0, radius: 3.0, arc: 90, gravelStrip: true },
@@ -157,6 +181,16 @@ export const LABELS = {
   realism: { photo: "צילום פוטו-ריאליסטי", render: "רנדר אדריכלי", sketch: "סקיצה בעיפרון" },
   side: { right: "ימין", left: "שמאל" },
   direction: { perpendicular: "ניצב לחזית — עולים לכיוון הבית (כמו תמונה 2)", parallel: "מקביל לחזית, צמוד לקיר הבית" },
+  mesh: {
+    decorative_lattice: "רשת דקורטיבית (מעוינים/פרחים) — פתחים עד 10 ס\"מ",
+    perforated_sheet: "פח מחורר דקורטיבי",
+    vertical_bars: "פסים אנכיים צפופים (מרווח 10 ס\"מ)",
+  },
+  railColor: {
+    stone_beige: "בז' אבן (RAL 1019) — תואם לקירות",
+    dark_brown: "חום כהה (RAL 8017)",
+    graphite: "גרפיט (RAL 7024)",
+  },
 };
 
 // ---------- English text for the image model ----------
@@ -239,8 +273,25 @@ export function buildPrompt(c: Config): string {
       `Straight outdoor staircase positioned at the ${c.stairs.side} end of the patio and built DIRECTLY AGAINST the house front wall (attached to the house, as in photo B and sketch C), going up to the house entrance level: ${c.stairs.count} steps over a ${((c.stairs.count * c.stairs.tread) / 100).toFixed(1)} m run, ${c.stairs.width.toFixed(1)} m wide, ${c.stairs.riser} cm risers, ${c.stairs.tread} cm treads, made of ${EN.stairMaterial[c.stairs.material]}` +
         (c.stairs.sideWall ? ", with an exposed board-formed concrete cheek wall on the open side" : "") +
         `. ${dir}` +
+        (c.stairs.split
+          ? `. The staircase is SPLIT INTO TWO FLIGHTS with an intermediate landing between them: lower flight of ${c.stairs.lowerCount} steps, then a flat landing ${(c.stairs.midLanding / 100).toFixed(1)} m deep, then an upper flight of ${c.stairs.count - c.stairs.lowerCount} steps, both flights in the same straight line`
+          : "") +
         (c.stairs.landing ? ". A small landing and the entrance door are visible at the top of the stairs" : "") +
         "."
+    );
+  }
+
+  if (c.railing.on && c.stairs.on) {
+    const colorEn = { stone_beige: "warm beige (RAL 1019) matching the limestone walls", dark_brown: "dark brown (RAL 8017)", graphite: "graphite gray (RAL 7024)" }[c.railing.color];
+    const meshEn = {
+      decorative_lattice: "a decorative laser-cut lattice infill panel (small openings under 10 cm so a child cannot put a hand or head through)",
+      perforated_sheet: "a decorative perforated metal sheet infill",
+      vertical_bars: "closely spaced vertical bars (10 cm gaps)",
+    }[c.railing.mesh];
+    parts.push(
+      `Guard rail on BOTH sides of the staircase, ${c.railing.height} cm high, made of square steel profile ${c.railing.profile}x${c.railing.profile} mm, powder-coated ${colorEn}: on the house side ` +
+        (c.railing.wallPlate ? `a continuous flat steel plate handrail bolted to the house wall and welded to the stair stringer; ` : `a wall-mounted handrail; `) +
+        `on the OUTER open side vertical posts every ${c.railing.postSpacing} cm with a top handrail and ${meshEn}, following the slope of both flights and the landing.`
     );
   }
 
@@ -307,11 +358,12 @@ export function buildSummary(c: Config): { k: string; v: string }[] {
   if (c.stairs.on)
     out.push({
       k: "מדרגות",
-      v: `${c.stairs.count} × ${c.stairs.riser}/${c.stairs.tread} ס"מ · רוחב ${c.stairs.width} מ' · עלייה ${(
-        (c.stairs.count * c.stairs.riser) /
-        100
-      ).toFixed(2)} מ'`,
+      v:
+        `${c.stairs.count} × ${c.stairs.riser}/${c.stairs.tread} ס"מ · רוחב ${c.stairs.width} מ' · עלייה ${((c.stairs.count * c.stairs.riser) / 100).toFixed(2)} מ'` +
+        (c.stairs.split ? ` · ${c.stairs.lowerCount}+${c.stairs.count - c.stairs.lowerCount} עם פודסט ${c.stairs.midLanding} ס"מ` : ""),
     });
+  if (c.railing.on && c.stairs.on)
+    out.push({ k: "מעקה", v: `${c.railing.height} ס"מ · פרופיל ${c.railing.profile} מ"מ · ${LABELS.railColor[c.railing.color].split(" —")[0]}` });
   if (c.tallWall.on) out.push({ k: "קיר גבוה", v: `${c.tallWall.h} מ' × ${c.tallWall.len} מ'` });
   if (c.curvedWall.on) out.push({ k: "קיר מעוגל", v: `R${c.curvedWall.radius} מ' · ${c.curvedWall.arc}°${c.curvedWall.gravelStrip ? " · פס חצץ" : ""}` });
   if (c.steppingStones.on) out.push({ k: "אבני מדרך", v: `${c.steppingStones.count} מדרגות למדרכה` });

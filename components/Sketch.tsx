@@ -15,7 +15,9 @@ type Box = { x: number; w: number; h: number; fill: string; label: string; dim: 
 
 export default function Sketch({ cfg }: { cfg: Config }) {
   const rise = cfg.stairs.on ? (cfg.stairs.count * cfg.stairs.riser) / 100 : 0;
-  const run = cfg.stairs.on ? (cfg.stairs.count * cfg.stairs.tread) / 100 : 0;
+  const midLanding = cfg.stairs.split ? cfg.stairs.midLanding / 100 : 0;
+  const run = cfg.stairs.on ? (cfg.stairs.count * cfg.stairs.tread) / 100 + midLanding : 0;
+  const lower = cfg.stairs.split ? Math.min(cfg.stairs.lowerCount, cfg.stairs.count - 1) : cfg.stairs.count;
 
   // ---- רצף אופקי של אלמנטים (מטרים) ----
   const seq: Box[] = [];
@@ -95,30 +97,55 @@ export default function Sketch({ cfg }: { cfg: Config }) {
           return (
             <g key={i}>
               {isStairs ? (
-                <path
-                  d={
-                    (() => {
-                      const n = cfg.stairs.count;
-                      const tr = (cfg.stairs.tread / 100) * S;
-                      const rs = (cfg.stairs.riser / 100) * S;
-                      const up = cfg.stairs.side === "right"; // עולה לכיוון הבית (שמאלה בציור)
-                      let d = up ? `M${x + b.w * S} ${G}` : `M${x} ${G}`;
-                      let cx = up ? x + b.w * S : x;
-                      let cy = G;
-                      for (let k = 0; k < n; k++) {
-                        cy -= rs;
-                        d += ` V${cy}`;
-                        cx += up ? -tr : tr;
-                        d += ` H${cx}`;
-                      }
-                      d += ` V${G} Z`;
-                      return d;
-                    })()
+                (() => {
+                  const n = cfg.stairs.count;
+                  const tr = (cfg.stairs.tread / 100) * S;
+                  const rs = (cfg.stairs.riser / 100) * S;
+                  const up = cfg.stairs.side === "right"; // עולה לכיוון הבית (שמאלה בציור)
+                  const dirX = up ? -1 : 1;
+                  let cx = up ? x + b.w * S : x;
+                  let cy = G;
+                  let d = `M${cx} ${G}`;
+                  const nosings: [number, number][] = [];
+                  for (let k = 0; k < n; k++) {
+                    cy -= rs;
+                    d += ` V${cy}`;
+                    nosings.push([cx, cy]);
+                    cx += dirX * tr;
+                    d += ` H${cx}`;
+                    if (cfg.stairs.split && k === lower - 1) {
+                      cx += dirX * midLanding * S; // פודסט ביניים
+                      d += ` H${cx}`;
+                    }
                   }
-                  fill={b.fill}
-                  stroke={INK}
-                  strokeWidth="1"
-                />
+                  nosings.push([cx, cy]);
+                  d += ` V${G} Z`;
+                  const rh = (cfg.railing.height / 100) * S;
+                  return (
+                    <g>
+                      <path d={d} fill={b.fill} stroke={INK} strokeWidth="1" />
+                      {cfg.stairs.split && (
+                        <text x={up ? x + b.w * S - (lower * tr + (midLanding * S) / 2) : x + lower * tr + (midLanding * S) / 2} y={G - lower * rs - 4} textAnchor="middle" fontSize="9" fill={INK}>
+                          פודסט {cfg.stairs.midLanding}
+                        </text>
+                      )}
+                      {cfg.railing.on && (
+                        <g stroke="#7a6a4a" strokeWidth="1.2" fill="none">
+                          {/* מאחז עליון עוקב אחרי קו האף */}
+                          <path d={nosings.map(([px, py], i) => `${i === 0 ? "M" : "L"}${px} ${py - rh}`).join(" ")} />
+                          {/* עמודים לפי מרווח */}
+                          {nosings
+                            .filter((_, i) => i % Math.max(1, Math.round(cfg.railing.postSpacing / cfg.stairs.tread)) === 0 || i === nosings.length - 1)
+                            .map(([px, py], i) => (
+                              <path key={i} d={`M${px} ${py} V${py - rh}`} />
+                            ))}
+                          {/* מילוי רשת — מסומן כקו מקווקו */}
+                          <path d={nosings.map(([px, py], i) => `${i === 0 ? "M" : "L"}${px} ${py - rh / 2}`).join(" ")} strokeDasharray="2 3" strokeWidth="0.8" />
+                        </g>
+                      )}
+                    </g>
+                  );
+                })()
               ) : (
                 <rect x={x} y={y} width={b.w * S} height={b.h * S} fill="url(#stone)" stroke={INK} strokeWidth="1.2" />
               )}
@@ -172,7 +199,8 @@ export default function Sketch({ cfg }: { cfg: Config }) {
                 />
                 {Array.from({ length: cfg.stairs.count }).map((_, k) => {
                   const x0 = cfg.stairs.side === "right" ? cfg.patio.width * S - run * S : 0;
-                  const xx = x0 + ((k + 1) * cfg.stairs.tread * S) / 100;
+                  const off = cfg.stairs.split && k >= lower ? midLanding * S : 0;
+                  const xx = x0 + ((k + 1) * cfg.stairs.tread * S) / 100 + off;
                   return <path key={k} d={`M${xx} 0 V${cfg.stairs.width * S}`} stroke={INK} strokeWidth="0.5" />;
                 })}
                 <text x={cfg.stairs.side === "right" ? cfg.patio.width * S - (run * S) / 2 : (run * S) / 2} y={cfg.stairs.width * S + 12} textAnchor="middle" fontSize="10" fill={INK}>
