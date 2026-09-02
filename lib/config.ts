@@ -89,7 +89,7 @@ export const DEFAULT: Config = {
     material: "concrete",
     side: "right",
     sideWall: true,
-    direction: "parallel",
+    direction: "perpendicular",
     landing: true,
   },
   tallWall: { on: true, h: 2.6, len: 3.0, cap: true, thickness: 40 },
@@ -131,7 +131,7 @@ export const LABELS = {
   mortar: { light: "בהיר", dark: "כהה", raked: "שקוע" },
   realism: { photo: "צילום פוטו-ריאליסטי", render: "רנדר אדריכלי", sketch: "סקיצה בעיפרון" },
   side: { right: "ימין", left: "שמאל" },
-  direction: { parallel: "מקביל לחזית, צמוד לקיר הבית (כמו תמונה 2)", perpendicular: "ניצב לחזית (עולים לכיוון הבית)" },
+  direction: { perpendicular: "ניצב לחזית — עולים לכיוון הבית (כמו תמונה 2)", parallel: "מקביל לחזית, צמוד לקיר הבית" },
 };
 
 // ---------- English text for the image model ----------
@@ -206,7 +206,7 @@ export function buildPrompt(c: Config): string {
     const dir =
       c.stairs.direction === "parallel"
         ? `The flight runs PARALLEL to the house facade, hugging the house wall, rising from ${c.stairs.side === "right" ? "left to right" : "right to left"} exactly as in photo B — NOT perpendicular to the house`
-        : `The flight runs perpendicular to the facade, climbing straight toward the house`;
+        : `The flight runs perpendicular to the facade, climbing straight toward the house, seen head-on exactly as in photo B`;
     parts.push(
       `Straight outdoor staircase on the ${c.stairs.side} side of the patio going up to the house entrance level: ${c.stairs.count} steps over a ${((c.stairs.count * c.stairs.tread) / 100).toFixed(1)} m run, ${c.stairs.width.toFixed(1)} m wide, ${c.stairs.riser} cm risers, ${c.stairs.tread} cm treads, made of ${EN.stairMaterial[c.stairs.material]}` +
         (c.stairs.sideWall ? ", with an exposed board-formed concrete cheek wall on the open side" : "") +
