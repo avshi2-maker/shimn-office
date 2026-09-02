@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.env*
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+1.jpeg
+2.jpeg
+3.jpeg
+4.jpeg
+5.jpeg
+shimon_data.docx
